@@ -9,7 +9,7 @@ def plot_car_positions(data: SimData, include_leader=False) -> None:
     for i in range(data.n_cars):
         plt.plot(data.time, data.positions[i])
     if include_leader:
-        plt.plot(data.time, [data.settings.leader_pos(t) for t in data.time], label="leader")
+        plt.plot(data.time, [data.settings.leader_state(t)[0] for t in data.time], label="leader")
     plt.xlabel("time (s)")
     plt.ylabel("position (m)")
     plt.legend()

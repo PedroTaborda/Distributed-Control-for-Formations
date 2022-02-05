@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+
 import numpy as np
 
 from control.controlled_car import ControlledCar
@@ -23,7 +25,9 @@ class Simulator:
 
     def simulate(self) -> None:
         for t in np.arange(0, self.settings.time_sim, self.settings.controller_sample_time):
-            self.step(self.settings.leader_pos(t), self.settings.controller_sample_time)
+            t0 = time.time()
+            self.step(self.settings.leader_state(t), self.settings.controller_sample_time)
+            print(f"Time step: {time.time() - t0}")
 
         self.simulated = True
 
@@ -63,7 +67,7 @@ if __name__ == "__main__":
                 ControllerParameters()
             )
         ),
-        leader_pos=lambda t: t
+        leader_state=lambda t: t
     )
 
     sim = Simulator(settings)

@@ -13,30 +13,36 @@ class DistributedControlledSystem:
 
         self.references = []
 
-    def step(self, leader_pos: float, time_step: float):
+    def step(self, leader_state: np.ndarray, time_step: float):
         """Steps entire system by time_step, using reference ref as the position
         of the leader of the platoon
         """
         cur_references = []
 
-        for i, car in enumerate(self.cars):
-            # compute desired distance to the next car
-            current_car_front_pos = car.state[0]
-            current_car_back_pos = car.state[0] - car.car.params.length
 
+        for i, car in enumerate(self.cars):
             if i == 0:
-                car_ahead_back = leader_pos
-                car_behind_front = self.cars[i+1].state[0]
+                car_ahead_back_state = leader_state
+                if len(self.cars) < 2:
+                    car_behind_front_state = [-np.inf, 0, 0]
+                else:
+                    car_behind_front_state = self.cars[i+1].state
+                    car_behind_front_state[0] = car_behind_front_state[0] + self.cars[i+1].car.params.length
             elif i == len(self.cars) - 1:
-                car_ahead_back = self.cars[i-1].state[0]
-                car_behind_front = np.inf
+                car_ahead_back_state = self.cars[i-1].state
+                car_behind_front_state = [-np.inf, 0, 0]
             else:
-                car_ahead_back = self.cars[i-1].state[0]
-                car_behind_front = self.cars[i+1].state[0]
+                car_ahead_back_state = self.cars[i-1].state
+                car_behind_front_state = self.cars[i+1].state
+                car_behind_front_state[0] = car_behind_front_state[0] + self.cars[i+1].car.params.length
+
+            # convert to distances, as absolute position is not known
+            car_ahead_back_state[0] = car_ahead_back_state[0] - (car.state[0] + car.car.params.length)
+            car_behind_front_state[0] = car_behind_front_state[0] - car.state[0]
 
             info = np.array([
-                np.abs(car_ahead_back - current_car_front_pos),
-                np.abs(car_behind_front - current_car_back_pos)
+                car_ahead_back_state,
+                car_behind_front_state
             ])
             
             cur_references.append(info)

@@ -18,7 +18,7 @@ class SimSettings:
             ControllerParameters()
         ),)
 
-    leader_pos: Callable[[float], float] = lambda t: t
+    leader_state: Callable[[float], np.ndarray] = lambda t: t
 
 @dataclass
 class SimData:

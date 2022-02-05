@@ -40,7 +40,7 @@ class ControlledCar:
 if __name__ == "__main__":
     # test
     car_params = CarParameters()
-    controller_params = ControllerParameters()
+    controller_params = ControllerParameters(car_params=car_params)
 
     car = ControlledCar(car_params, controller_params)
 

@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 from simulation.sim_dataflow import SimSettings, SimData
 from simulation.simulator import Simulator
@@ -11,31 +12,45 @@ from control.car_controller import ControllerParameters
 from visualization.plot_primitives import plot_car_positions, plot_car_reference_error, plot_intercar_distances
 
 if __name__ == "__main__":
-    def leader_pos(t):
-        # leader velocity is a zero order hold of the following points
+    def leader_state(t):
+        # leader velocity is a linear interpolation of the following points
         # a point is (t, v)
-        v_points = ((0, 0), (1, 50), (5, 0))
+        v_points = ((0, 0), (1, 0), (1.1, 50), (5, 50), (5.1, 0))
         pos_initial = 0
 
         pos = pos_initial
-        # Before the specified points, velocity is 0
-        prev_time = -3  # any value can be assigned here, irrelevant
-        prev_vel = 0
-        for t_p, v_p in v_points:
+        # Before the specified points, velocity is constant
+        first_t, first_v = v_points[0]
+        if t < first_t:
+            accel=0
+            vel=first_v
+            pos += (t-first_t)*vel
+            return np.array[(pos, vel, accel)]
+        
+        prev_time = first_t
+        prev_vel = first_v
+        for t_p, v_p in v_points[1:]:
+            accel = (v_p - prev_vel)/(t_p - prev_time)
             if t <= t_p:
-                return pos + (t-prev_time)*prev_vel
+                delta_t = t - prev_time
+                vel = prev_vel + delta_t*accel
+                pos += delta_t*prev_vel + delta_t**2 * accel / 2
+                return np.array([pos, vel, accel])
             else:
                 pos += (t_p - prev_time)*prev_vel
             prev_time = t_p
             prev_vel = v_p
         # if code reaches here, then time is after all points
         final_t, final_v = v_points[-1]
-        return pos + (t - final_t)*final_v
+        accel=0
+        vel=final_v
+        pos += (t-final_t)*vel
+        return np.array([pos, vel, accel])
 
     # example simulation with three cars
     settings = SimSettings(
         controller_sample_time=0.1,
-        time_sim=100.0,
+        time_sim=10.0,
         cars_params=(
             (
                 CarParameters(pos_i=-10.0),
@@ -50,7 +65,7 @@ if __name__ == "__main__":
                 ControllerParameters()
             )
         ),
-        leader_pos=leader_pos
+        leader_state=leader_state
     )
 
     sim = Simulator(settings)
