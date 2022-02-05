@@ -16,18 +16,18 @@ if __name__ == "__main__":
     # example simulation with three cars
     settings = SimSettings(
         step_sim=0.1,
-        time_sim=100.0,
+        time_sim=10.0,
         cars_params=(
             (
-                CarParameters(pos_i=0.0),
+                CarParameters(pos_i=-10.0),
                 ControllerParameters()
             ),
             (
-                CarParameters(pos_i=-1.0),
+                CarParameters(pos_i=-30.0),
                 ControllerParameters()
             ),
             (
-                CarParameters(pos_i=-2.0),
+                CarParameters(pos_i=-50.0),
                 ControllerParameters()
             )
         ),
