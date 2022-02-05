@@ -36,9 +36,9 @@ class DistributedControlledSystem:
             d = self.params.d(i, car.state[1])
 
             if i == 0:
-                pos_ref = ref - d
+                pos_ref = ref - d - car.car.params.length
             else:
-                pos_ref = self.cars[i-1].state[0] - d
+                pos_ref = self.cars[i-1].state[0] - d - car.car.params.length
             cur_references.append(pos_ref)
 
             car.step(pos_ref, time_step)
