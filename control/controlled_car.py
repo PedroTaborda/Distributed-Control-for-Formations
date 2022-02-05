@@ -28,11 +28,11 @@ class ControlledCar:
     def _step_func(self, t: float, x: np.ndarray, u: float) -> np.ndarray:
         return self.car.state_space_dynamics(x, u) 
 
-    def step(self, ref: float, time_step: float) -> np.ndarray:
-        u = self.controller.control_input(self.state, ref)
+    def step(self, environment_data: np.ndarray, time_step: float) -> np.ndarray:
+        u = self.controller.control_input(self.state, environment_data)
         self.state = np.array(solve_ivp(self._step_func, [0, time_step], self.state, args=(u,)).y[:, -1])
 
-        self.control_signals.append(self.controller.control_input(self.state, ref))
+        self.control_signals.append(self.controller.control_input(self.state, environment_data))
         self.states.append(self.state)
 
         return self.state

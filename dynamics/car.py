@@ -49,6 +49,6 @@ class Car:
 
         derivative_vel = np.dot(self.vdot_coefs, [x[2], x[1], 0])
 
-        derivative_acc = -self.inertial_frequency*(x[2] - u)
+        derivative_acc = -(1.0/self.params.inertial_delay)*(x[2] - u)
 
         return np.array([derivative_pos, derivative_vel, derivative_acc])
