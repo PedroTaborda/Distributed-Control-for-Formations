@@ -9,6 +9,10 @@ from scipy.optimize import minimize
 
 from dynamics.car import Car, CarParameters
 
+def default_dist_keeping(v: float, th: float=0, d0: float=1) -> float:
+    """Computes the default distance keeping controller.
+    """
+    return v
 
 @dataclass
 class ControllerParameters:
@@ -18,7 +22,7 @@ class ControllerParameters:
 
     d0: float = 1.0
     th: float = 0.0
-    d: Callable[[float], float] = lambda v, th=th, d0=d0: th*v + d0  # desired distance between itself and the next car
+    d: Callable[[float], float] = default_dist_keeping  # desired distance between itself and the next car
 
     car_params: CarParameters = CarParameters()
     mpc_t_horizon: float = 10.0

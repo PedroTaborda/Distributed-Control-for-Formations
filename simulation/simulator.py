@@ -33,17 +33,14 @@ class Simulator:
 
 
     def get_sim_data(self) -> SimData:
-        for car in self.system.cars:
-            car.states = np.array(car.states)
-        
-        time = np.linspace(0, self.sim_t, len(self.system.cars[0].states), endpoint=False)
+        time = np.linspace(0, self.sim_t, len(self.system.positions), endpoint=False)
         return SimData(
             settings=self.settings,
             n_cars=len(self.system.cars),
             time=time,
-            positions=np.array([car.states[:, 0] for car in self.system.cars]),
-            velocities=np.array([car.states[:, 1] for car in self.system.cars]),
-            accelerations=np.array([car.states[:, 2] for car in self.system.cars]),
+            positions=np.array(self.system.positions),
+            velocities=np.array(self.system.velocities),
+            accelerations=np.array(self.system.accelerations),
             control_signals=np.array([car.control_signals for car in self.system.cars]),
             references=np.array(self.system.references)
         )

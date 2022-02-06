@@ -63,6 +63,18 @@ if __name__ == "__main__":
             (
                 CarParameters(pos_i=-50.0),
                 ControllerParameters()
+            ),
+            (
+                CarParameters(pos_i=-70.0),
+                ControllerParameters()
+            ),
+            (
+                CarParameters(pos_i=-90.0),
+                ControllerParameters()
+            ),
+            (
+                CarParameters(pos_i=-110.0),
+                ControllerParameters()
             )
         ),
         leader_state = leader_state # lambda t: np.array([t, 1, 0])  #
