@@ -48,7 +48,7 @@ class Simulator:
             positions=np.array(self.system.positions),
             velocities=np.array(self.system.velocities),
             accelerations=np.array(self.system.accelerations),
-            control_signals=np.array([car.control_signals for car in self.system.cars]),
+            control_signals=np.array(self.system.control_signals),
             references=np.array(self.system.references)
         )
 

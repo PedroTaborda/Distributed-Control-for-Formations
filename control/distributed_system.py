@@ -14,6 +14,7 @@ class DistributedControlledSystem:
         self.cars = cars
 
         self.references = []
+        self.control_signals = []
 
         self.positions = []
         self.velocities = []
@@ -39,17 +40,18 @@ class DistributedControlledSystem:
 
         reference = car_ahead_back_state_pos[0] - (car.controller.params.d(car.state[1]) + car.car.params.length)
 
-        return car.state, reference
+        return car.state, reference, car.control_signal
 
     def step(self, leader_state: np.ndarray, time_step: float):
         """Steps entire system by time_step, using reference ref as the position
         of the leader of the platoon
         """
         cur_references = []
+        cur_control_signals = []
 
         # step all cars using multiprocessing
         #with self.pool as pool:
-        states_and_refs = self.pool.starmap(
+        states_refs_control = self.pool.starmap(
             self._step_func,
             zip(
                 [self.cars] * self.n_jobs,
@@ -60,9 +62,11 @@ class DistributedControlledSystem:
         )
         
         for i, car in enumerate(self.cars):
-            state, reference = states_and_refs[i]
+            state, reference, control_signal = states_refs_control[i]
             car.state = state
+
             cur_references.append(reference)
+            cur_control_signals.append(control_signal)
 
 
         self.positions.append(np.array([car.state[0] for car in self.cars]))
@@ -70,3 +74,4 @@ class DistributedControlledSystem:
         self.accelerations.append(np.array([car.state[2] for car in self.cars]))
 
         self.references.append(cur_references)
+        self.control_signals.append(cur_control_signals)

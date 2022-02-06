@@ -21,7 +21,7 @@ class CarParameters:
 
     deadzone_threshold_velocity: float = 0.1  # velocity in m/s
 
-    inertial_delay: float = 0.1  # delay in seconds
+    inertial_delay: float = 0.5  # delay in seconds
 
     pos_i: float = 0.0  # initial position in meters
     vel_i: float = 0.0  # initial velocity in meters/second

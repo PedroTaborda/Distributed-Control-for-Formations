@@ -15,7 +15,7 @@ class ControllerParameters:
     th: float = 1.0
 
     def d(self, v: float): 
-        return v*self.th + self.d0
+        return max(v, 0)*self.th + self.d0
 
     car_params: CarParameters = CarParameters()
     mpc_t_horizon: float = 5.0
@@ -25,15 +25,15 @@ class ControllerParameters:
 
     mpc_step_size: float = mpc_t_horizon / mpc_n_horizon
 
-    mpc_u_min: float = -10000.0
-    mpc_u_max: float = 10000.0
+    mpc_u_min: float = -1000.0
+    mpc_u_max: float = 1000.0
 
-    mpc_u_weight_factor: float = 1e-9
+    mpc_u_weight_factor: float = 1e-13
 
     mpc_optimizer_max_iter: int = 100
     mpc_optimizer_ftol: float = 1e-6
 
-    mpc_acceleration_factor_second_order_approx: float = 0.5
+    mpc_acceleration_factor_second_order_approx: float = 1
 
 
 class Controller:
@@ -137,7 +137,7 @@ class Controller:
             return zeros_vec
         
         dynamics_scale: np.ndarray = np.array([1e-3, 1/50, 1/10])
-        numeric_scale_factor: float = 1e-3
+        numeric_scale_factor: float = 1e-3*1000
 
         cons = list(({
             'type': 'eq', 
@@ -172,17 +172,25 @@ class Controller:
             }
         )
 
-
         #print('contraint: ', collision_constraint(res.x, 0))
 
-        if not res.success:
-            print(f"MPC failed with error: {res.message}")
-            print(res)
+        #if not res.success:
+        #    print(f"MPC failed with error: {res.message}")
+        #    print(res)
 
         self.U0 = res.x
 
         u_mpc = res.x[3*N]
-        # self._mpc_cost_fcn(res.x, car_ahead_states, disp=True)
+
+        #import matplotlib.pyplot as plt
+        #plt.clf()
+        #plt.plot(time_vec, res.x[:N], label="P")
+        #plt.plot(time_vec, car_ahead_states[:, 0], label="P_ahead")
+        #refs = car_ahead_states[:, 0] - np.array([self.params.d(state[1]) for state in car_ahead_states])
+        #plt.plot(time_vec, refs, label="ref")
+        #plt.legend()
+        #plt.pause(0.001)
+
         return u_mpc
 
     @ staticmethod

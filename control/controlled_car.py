@@ -23,37 +23,16 @@ class ControlledCar:
             self.car.params.accel_i
         ])
 
-        self.control_signals = []
-        self.states = [self.state]
+        self.control_signal = 0.0
 
     def _step_func(self, t: float, x: np.ndarray, u: float) -> np.ndarray:
         return self.car.state_space_dynamics(x, u)
 
     def step(self, environment_data: np.ndarray, time_step: float) -> np.ndarray:
         u = self.controller.control_input(self.state, environment_data)
-        print(f"environment_data: {environment_data}")
-        #print(f"Control input: {u}")
         sol = solve_ivp(self._step_func, [0, time_step], self.state, args=(u,))
+        
         self.state = np.array(sol.y[:, -1])
-
-        if not sol.success:
-            print("Integration failed")
-            print(f"Sol scipy: {sol}")
-
-        self.control_signals.append(self.controller.control_input(self.state, environment_data))
-        self.states.append(self.state)
+        self.control_signal = u
 
         return self.state
-
-
-if __name__ == "__main__":
-    # test
-    car_params = CarParameters()
-    controller_params = ControllerParameters(car_params=car_params)
-
-    car = ControlledCar(car_params, controller_params)
-
-    for i in range(100):
-        car.step(1, 0.1)
-        print(car.states[-1])
-        print(car.control_signals[-1])
