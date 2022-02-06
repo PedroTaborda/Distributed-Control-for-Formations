@@ -34,7 +34,6 @@ class DistributedControlledSystem:
 
             cur_references.append(car_ahead_back_state_dist)
 
-            print(f"car_ahead_back_state_dist: {car_ahead_back_state_dist}")
             car.step(car_ahead_back_state_dist, time_step)
 
         self.references.append(cur_references)

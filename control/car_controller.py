@@ -21,7 +21,7 @@ class ControllerParameters:
     d: Callable[[float], float] = lambda v, th=th, d0=d0: th*v + d0  # desired distance between itself and the next car
 
     car_params: CarParameters = CarParameters()
-    mpc_t_horizon: float = 1.0
+    mpc_t_horizon: float = 10.0
     mpc_n_horizon: int = 5
 
     mpc_step_size: float = mpc_t_horizon / mpc_n_horizon
@@ -141,7 +141,7 @@ class Controller:
         self.U0 = res.x
 
         u_mpc = res.x[3*N]
-        self._mpc_cost_fcn(res.x, car_ahead_states, disp=True)
+        #self._mpc_cost_fcn(res.x, car_ahead_states, disp=True)
         return u_mpc
 
     @staticmethod
