@@ -52,11 +52,6 @@ class Car:
             -params.rolling_resistance*params.gravity/params.inertial_delay
         ])
 
-    # def state_pva(self, x: np.ndarray) -> np.ndarray:
-    #     """Computes the position, velocity and acceleration of the car.
-    #     """
-    #     return np.array([x[0], x[1], np.dot(self.adot_coefs, [x[2], x[1], 1])])
-
     def state_space_dynamics(self, x: np.ndarray, u: float) -> np.ndarray:
         """Computes the derivative of the state vector, given the current state
         and the control input.
@@ -67,6 +62,6 @@ class Car:
 
         derivative_vel = a
 
-        derivative_accel = np.dot(self.adot_coefs, [u, a, v*np.abs(v), a*v, 1*np.sign(deadzone(v, self.params.deadzone_threshold_velocity))])
+        derivative_accel = np.dot(self.adot_coefs, [u, a, v*np.abs(v), a*np.abs(v), 1*np.sign(deadzone(v, self.params.deadzone_threshold_velocity))])
 
         return np.array([derivative_pos, derivative_vel, derivative_accel])
