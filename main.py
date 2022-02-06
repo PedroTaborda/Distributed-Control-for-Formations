@@ -82,11 +82,8 @@ if __name__ == "__main__":
 
     sim = Simulator(settings)
 
-    try:
-        sim.simulate()
-    finally:
-        data: SimData = sim.get_sim_data()
+    data: SimData = sim.sim_and_get_data()
 
-        plt.figure()
-        plot_car_positions(data, include_leader=True)
-        plt.show()
+    plt.figure()
+    plot_car_positions(data, include_leader=True)
+    plt.show()

@@ -7,6 +7,7 @@ import numpy as np
 from control.controlled_car import ControlledCar
 from control.distributed_system import DistributedControlledSystem
 from simulation.sim_dataflow import SimSettings, SimData
+from performance.cache_utils import cached
 
 class Simulator:
     def __init__(self, settings: SimSettings) -> None:
@@ -24,11 +25,17 @@ class Simulator:
     def step(self, ref: float, time_step: float) -> None:
         self.system.step(ref, time_step)
 
+    @cached(class_func=True, folder='simulations')
+    def sim_and_get_data(self) -> SimData:
+        self.simulate()
+        return self.get_sim_data()
+
     def simulate(self) -> None:
+        self.system.init_sim_vars()
         for t in np.arange(0, self.settings.time_sim, self.settings.controller_sample_time):
             t0 = time.time()
             self.step(self.settings.leader_state(t), self.settings.controller_sample_time)
-            print(f"======= Time step: {time.time() - t0:.2f} ({t:.2f}/{self.settings.time_sim:.2f})")
+            print(f"======= Time step: {time.time() - t0:.2f} ({t+self.settings.controller_sample_time:.2f}/{self.settings.time_sim:.2f})")
             self.sim_t = t 
 
 

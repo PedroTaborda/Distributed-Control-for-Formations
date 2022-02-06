@@ -19,6 +19,7 @@ class DistributedControlledSystem:
         self.velocities = []
         self.accelerations = []
 
+    def init_sim_vars(self) -> None:
         self.n_jobs = len(self.cars)
         self.pool = mp.Pool(processes=self.n_jobs)
 
@@ -30,11 +31,9 @@ class DistributedControlledSystem:
         else:
             car_ahead_back_state_pos = cars[i-1].state
 
-
         # convert to distances, as absolute position is not known
         car_ahead_back_state_dist = copy.copy(car_ahead_back_state_pos)
         car_ahead_back_state_dist[0] = car_ahead_back_state_pos[0] - (car.state[0] + car.car.params.length)
-
 
         car.step(car_ahead_back_state_dist, time_step)
 

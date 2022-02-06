@@ -21,8 +21,10 @@ class ControllerParameters:
     k: float = 1.0  # TODO: PLACEHOLDER
 
     d0: float = 1.0
-    th: float = 0.0
-    d: Callable[[float], float] = default_dist_keeping  # desired distance between itself and the next car
+    th: float = 1.0
+
+    def d(self, v: float): 
+        return v*self.th + self.d0
 
     car_params: CarParameters = CarParameters()
     mpc_t_horizon: float = 10.0
