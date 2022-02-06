@@ -49,9 +49,9 @@ class Controller:
     def _error_to_ref(self, PVAU: np.ndarray, car_ahead_states: np.ndarray) -> np.ndarray:
         P, V, A, U = self.unpack_PVAU(PVAU)
         distances_to_front = car_ahead_states[:, 0] - (P + self.car.params.length)
-        reference_distances = np.array([self.params.d(state[1]) for state in car_ahead_states])
+        reference_distances = np.array([self.params.d(vel) for vel in V])
 
-        return self.inverse_leaky_relu(reference_distances - distances_to_front)
+        return self.inverse_leaky_relu(distances_to_front - reference_distances)
 
     def _mpc_cost_fcn(self, PVAU: np.ndarray, car_ahead_states: np.ndarray, disp: bool = False) -> np.ndarray:
         """Computes the cost function for the MPC problem.
@@ -75,7 +75,7 @@ class Controller:
 
         N = self.params.mpc_n_horizon
         matrix = np.block([
-            [np.eye(N), np.zeros((N, 3*N))],
+            [-np.eye(N), np.zeros((N, 3*N))],
             [np.zeros((2*N, 4*N))],
             [np.zeros((N, 3*N)), self.params.mpc_u_weight_factor * np.eye(N)]
         ])
