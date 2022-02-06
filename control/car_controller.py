@@ -123,7 +123,13 @@ class Controller:
 
             return dX - derivative(X[:, i], U[i])*self.params.mpc_step_size
 
+        def collision_constraint(PVAU, car_ahead_state, i):
+            P, V, A, U = self.unpack_PVAU(PVAU)
+
+            return car_ahead_state[0] - P[i]  # ineq constraints are non-negative
+
         cons = ({'type': 'eq', 'fun': lambda PVAU, i=i: dynamics_constraint(PVAU, i)} for i in range(N))
+        cons += ({'type': 'ineq', 'fun': lambda PVAU, i=i: collision_constraint(PVAU, i)} for i in range(N))
 
         def cost(PVAU): return self._mpc_cost_fcn(PVAU, car_ahead_states)
         def jac(PVAU): return self._mpc_cost_jac(PVAU, car_ahead_states)
@@ -136,15 +142,15 @@ class Controller:
 
         if not res.success:
             print(res)
-            #raise Exception(f"MPC failed with error: {res.message}")
+            # raise Exception(f"MPC failed with error: {res.message}")
 
         self.U0 = res.x
 
         u_mpc = res.x[3*N]
-        #self._mpc_cost_fcn(res.x, car_ahead_states, disp=True)
+        # self._mpc_cost_fcn(res.x, car_ahead_states, disp=True)
         return u_mpc
 
-    @staticmethod
+    @ staticmethod
     def pack_pvau(X, U):
         P = X[:, 0]
         V = X[:, 1]
