@@ -1,43 +1,39 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable
 
 import numpy as np
-from scipy.integrate import solve_ivp
 from scipy.optimize import minimize
 
 from dynamics.car import Car, CarParameters
-
-def default_dist_keeping(v: float, th: float=1.0, d0: float=1.0) -> float:
-    """Computes the default distance keeping controller.
-    """
-    return v*th + d0
 
 @dataclass
 class ControllerParameters:
     """Defines the settings for the controller.
     """
-    k: float = 1.0  # TODO: PLACEHOLDER
-
-    d0: float = 1.0
+    d0: float = 10.0
     th: float = 1.0
 
     def d(self, v: float): 
         return v*self.th + self.d0
 
     car_params: CarParameters = CarParameters()
-    mpc_t_horizon: float = 10.0
+    mpc_t_horizon: float = 5.0
     mpc_n_horizon: int = 5
 
-    mpc_sim_steps_per_control_step: int = 5
+    mpc_sim_steps_per_control_step: int = 10
 
     mpc_step_size: float = mpc_t_horizon / mpc_n_horizon
 
     mpc_u_min: float = -10000.0
     mpc_u_max: float = 10000.0
 
-    mpc_u_weight_factor: float = 1e-8
+    mpc_u_weight_factor: float = 1e-9
+
+    mpc_optimizer_max_iter: int = 100
+    mpc_optimizer_ftol: float = 1e-6
+
+    mpc_acceleration_factor_second_order_approx: float = 0.5
 
 
 class Controller:
@@ -47,22 +43,21 @@ class Controller:
 
         self.U0 = np.ones(self.params.mpc_n_horizon*4)
 
-    def _error_to_ref(self, PVAU: np.ndarray, car_ahead_states: np.ndarray, disp: bool = False) -> np.ndarray:
+    def inverse_leaky_relu(self, x, negative_penalty=10):
+        return np.where(x > 0, x, x * negative_penalty)
+
+    def _error_to_ref(self, PVAU: np.ndarray, car_ahead_states: np.ndarray) -> np.ndarray:
         P, V, A, U = self.unpack_PVAU(PVAU)
         distances_to_front = car_ahead_states[:, 0] - (P + self.car.params.length)
         reference_distances = np.array([self.params.d(state[1]) for state in car_ahead_states])
 
-        if disp:
-            print(f"Reference distances: {reference_distances}")
-            print(f"Distances to front: {distances_to_front}")
-
-        return reference_distances - distances_to_front
+        return self.inverse_leaky_relu(reference_distances - distances_to_front)
 
     def _mpc_cost_fcn(self, PVAU: np.ndarray, car_ahead_states: np.ndarray, disp: bool = False) -> np.ndarray:
         """Computes the cost function for the MPC problem.
         """
         P, V, A, U = self.unpack_PVAU(PVAU)
-        errors = self._error_to_ref(PVAU, car_ahead_states, disp)
+        errors = self._error_to_ref(PVAU, car_ahead_states)
 
         error_cost = np.sum(errors**2)
 
@@ -76,11 +71,7 @@ class Controller:
         return error_cost + self.params.mpc_u_weight_factor * control_cost
 
     def _mpc_cost_jac(self, PVAU: np.ndarray, car_ahead_states):
-        P, V, A, U = self.unpack_PVAU(PVAU)
-        distances_to_front = car_ahead_states[:, 0] - (P + self.car.params.length)
-        reference_distances = np.array([self.params.d(state[1]) for state in car_ahead_states])
-
-        errors = reference_distances - distances_to_front
+        errors = self._error_to_ref(PVAU, car_ahead_states)
 
         N = self.params.mpc_n_horizon
         matrix = np.block([
@@ -90,15 +81,6 @@ class Controller:
         ])
         PVAU[:N] = errors
         return 2 * matrix @ PVAU
-
-    def _mpc_cost_hess(self):
-        N = self.params.mpc_n_horizon
-        matrix = np.block([
-            [np.eye(N), np.zeros((N, 3*N))],
-            [np.zeros((2*N, 4*N))],
-            [np.zeros((N, 3*N)), self.params.mpc_u_weight_factor * np.eye(N)]
-        ])
-        return 2 * matrix
 
     def control_input(self, x: np.ndarray, inputs: np.ndarray) -> np.ndarray:
         """Computes the control input for the given state and control input.
@@ -111,8 +93,14 @@ class Controller:
         time_vec = np.linspace(0, self.params.mpc_t_horizon, self.params.mpc_n_horizon, endpoint=False)
         t_step = time_vec[1] - time_vec[0]
 
-        car_ahead_states = np.array([second_order_approx(
-            car_ahead_state, t+self.params.mpc_step_size) for t in time_vec])
+        car_ahead_states = np.array([
+            second_order_approx(
+                car_ahead_state, 
+                t+self.params.mpc_step_size,
+                acceleration_factor=self.params.mpc_acceleration_factor_second_order_approx
+                ) 
+                for t in time_vec
+            ])
 
         N = self.params.mpc_n_horizon
 
@@ -148,30 +136,44 @@ class Controller:
             zeros_vec[i] = -1.0
             return zeros_vec
         
+        dynamics_scale: np.ndarray = np.array([1e-3, 1/50, 1/10])
+        numeric_scale_factor: float = 1e-3
+
         cons = list(({
             'type': 'eq', 
-            'fun': lambda PVAU, i=i: dynamics_constraint(PVAU, i)
+            'fun': lambda PVAU, i=i: dynamics_scale*dynamics_constraint(PVAU, i)
             } for i in range(N)
         ))
         
         cons += list(({
             'type': 'ineq', 
-            'jac': lambda PVAU, i=i: collision_constraint_jac(PVAU, i),
-            'fun': lambda PVAU, i=i: collision_constraint(PVAU, i)
+            'jac': lambda PVAU, i=i: numeric_scale_factor*collision_constraint_jac(PVAU, i),
+            'fun': lambda PVAU, i=i: numeric_scale_factor*collision_constraint(PVAU, i)
             } for i in range(N)
         ))
-
-        def cost(PVAU): return self._mpc_cost_fcn(PVAU, car_ahead_states)
-        def jac(PVAU): return self._mpc_cost_jac(PVAU, car_ahead_states)
+        
+        def cost(PVAU): return numeric_scale_factor*self._mpc_cost_fcn(PVAU, car_ahead_states)
+        def jac(PVAU): return numeric_scale_factor*self._mpc_cost_jac(PVAU, car_ahead_states)
 
         bnds = [(None, None)]*3*N + [(self.params.mpc_u_min, self.params.mpc_u_max)]*N
         # print(bnds)
 
-        res = minimize(cost, self.U0, method="SLSQP", bounds=bnds, constraints=cons,
-                       jac=jac, options={'disp': False, "maxiter": 100})
+        res = minimize(
+            cost, 
+            self.U0, 
+            method="SLSQP", 
+            bounds=bnds, 
+            constraints=cons,
+            jac=jac, 
+            options={
+                'disp': False, 
+                "maxiter": self.params.mpc_optimizer_max_iter,
+                "ftol": self.params.mpc_optimizer_ftol,
+            }
+        )
 
 
-        print('contraint: ', collision_constraint(res.x, 0))
+        #print('contraint: ', collision_constraint(res.x, 0))
 
         if not res.success:
             print(f"MPC failed with error: {res.message}")
@@ -199,11 +201,14 @@ class Controller:
         return (P, V, A, U)
 
 
-def second_order_approx(init_state: np.ndarray, t: float) -> np.ndarray:
+def second_order_approx(init_state: np.ndarray, t: float, acceleration_factor: float = 0.5) -> np.ndarray:
     """Computes a second order approximation of the car's state at time t.
     """
+    a = init_state[2]*acceleration_factor
+    v = init_state[1]
+    p = init_state[0]
     return np.array([
-        init_state[0] + init_state[1]*t + 0.5*init_state[2]*t**2,
-        init_state[1] + init_state[2]*t,
-        init_state[2]
+        p + v*t + a*0.5*t**2,
+        v + a*t,
+        a
     ])

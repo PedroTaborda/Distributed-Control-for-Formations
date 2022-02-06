@@ -21,7 +21,7 @@ class CarParameters:
 
     deadzone_threshold_velocity: float = 0.1  # velocity in m/s
 
-    inertial_delay: float = 0.5  # delay in seconds
+    inertial_delay: float = 0.1  # delay in seconds
 
     pos_i: float = 0.0  # initial position in meters
     vel_i: float = 0.0  # initial velocity in meters/second
@@ -67,6 +67,6 @@ class Car:
 
         derivative_vel = a
 
-        derivative_accel = np.dot(self.adot_coefs, [u, a, v**2, a*v, 1*np.sign(deadzone(v, self.params.deadzone_threshold_velocity))])
+        derivative_accel = np.dot(self.adot_coefs, [u, a, v*np.abs(v), a*v, 1*np.sign(deadzone(v, self.params.deadzone_threshold_velocity))])
 
         return np.array([derivative_pos, derivative_vel, derivative_accel])

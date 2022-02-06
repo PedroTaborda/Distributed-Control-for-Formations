@@ -49,8 +49,8 @@ def leader_state(t):
 if __name__ == "__main__":
     # example simulation with three cars
     settings = SimSettings(
-        controller_sample_time=0.1,
-        time_sim=10.0,
+        controller_sample_time=1/4,
+        time_sim=20.0,
         cars_params=(
             (
                 CarParameters(pos_i=-10.0),
@@ -86,4 +86,7 @@ if __name__ == "__main__":
 
     plot_car_positions(data, include_leader=True)
     plt.show(block=False)
-    plot_intercar_distances(data)
+
+
+
+    plt.show(block=True)

@@ -31,8 +31,8 @@ class ControlledCar:
 
     def step(self, environment_data: np.ndarray, time_step: float) -> np.ndarray:
         u = self.controller.control_input(self.state, environment_data)
-        #print(f"environment_data: {environment_data}")
-        print(f"Control input: {u}")
+        print(f"environment_data: {environment_data}")
+        #print(f"Control input: {u}")
         sol = solve_ivp(self._step_func, [0, time_step], self.state, args=(u,))
         self.state = np.array(sol.y[:, -1])
 
