@@ -29,9 +29,8 @@ def plot_car_positions(data: SimData, include_leader: bool = False,
         if plot_control_signals:
             ax2.plot(
                 data.time,
-                data.control_signals[:, i],
+                data.control_signals[:, i]/1000.0,
                 color=color,
-                linestyle=":",
             )
     
 
@@ -41,13 +40,11 @@ def plot_car_positions(data: SimData, include_leader: bool = False,
             [data.settings.leader_state(t)[0] for t in data.time],
             [data.settings.leader_state(t)[0] + data.settings.cars_params[0][0].length for t in data.time], 
             alpha=0.8, 
-            label="leader", 
             color="black"
         )
     
     ax2.set_xlabel("time (s)")
-    ax2.set_ylabel("control signal (Nm)")
+    ax2.set_ylabel("control signal (kNm)")
     ax1.set_ylabel("position (m)")
-    ax1.legend()
 
     

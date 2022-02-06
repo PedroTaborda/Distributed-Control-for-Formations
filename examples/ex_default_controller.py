@@ -14,12 +14,12 @@ from visualization.plot_primitives import plot_car_positions
 
 def ex_avg_speed_leader(do_plots: bool = True, figs_dir: str = '') -> None:
     settings = SimSettings(
-        leader_state=fast_leader,
+        leader_state=avg_speed_leader,
         cars_params=tuple(
         (
             CarParameters(pos_i=pos),
             ControllerParameters()
-        ) for pos in [-10, -20, -30, -40]
+        ) for pos in [-13.5, -27.0, -40.5, -54.0]
         )
     )
     sim_data = Simulator(settings).sim_and_get_data()

@@ -25,8 +25,8 @@ class ControllerParameters:
 
     mpc_step_size: float = mpc_t_horizon / mpc_n_horizon
 
-    mpc_u_min: float = -1000.0
-    mpc_u_max: float = 1000.0
+    mpc_u_min: float = -10000.0
+    mpc_u_max: float = 10000.0
 
     mpc_u_weight_factor: float = 1e-13
 
