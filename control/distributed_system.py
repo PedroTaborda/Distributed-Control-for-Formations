@@ -1,4 +1,5 @@
 from __future__ import annotations
+import copy
 
 import numpy as np
 
@@ -22,31 +23,16 @@ class DistributedControlledSystem:
 
         for i, car in enumerate(self.cars):
             if i == 0:
-                car_ahead_back_state = leader_state
-                if len(self.cars) < 2:
-                    car_behind_front_state = [-np.inf, 0, 0]
-                else:
-                    car_behind_front_state = self.cars[i+1].state
-                    car_behind_front_state[0] = car_behind_front_state[0] + self.cars[i+1].car.params.length
-            elif i == len(self.cars) - 1:
-                car_ahead_back_state = self.cars[i-1].state
-                car_behind_front_state = [-np.inf, 0, 0]
+                car_ahead_back_state_pos = leader_state
             else:
-                car_ahead_back_state = self.cars[i-1].state
-                car_behind_front_state = self.cars[i+1].state
-                car_behind_front_state[0] = car_behind_front_state[0] + self.cars[i+1].car.params.length
+                car_ahead_back_state_pos = self.cars[i-1].state
 
             # convert to distances, as absolute position is not known
-            car_ahead_back_state[0] = car_ahead_back_state[0] - (car.state[0] + car.car.params.length)
-            car_behind_front_state[0] = car_behind_front_state[0] - car.state[0]
+            car_ahead_back_state_dist = copy.copy(car_ahead_back_state_pos)
+            car_ahead_back_state_dist[0] = car_ahead_back_state_pos[0] - (car.state[0] + car.car.params.length)
 
-            info = np.array([
-                car_ahead_back_state,
-                car_behind_front_state
-            ])
-            
-            cur_references.append(info)
+            cur_references.append(car_ahead_back_state_dist)
 
-            car.step(info, time_step)
+            car.step(car_ahead_back_state_dist, time_step)
 
         self.references.append(cur_references)

@@ -30,7 +30,14 @@ class ControlledCar:
 
     def step(self, environment_data: np.ndarray, time_step: float) -> np.ndarray:
         u = self.controller.control_input(self.state, environment_data)
-        self.state = np.array(solve_ivp(self._step_func, [0, time_step], self.state, args=(u,)).y[:, -1])
+        #print(f"environment_data: {environment_data}")
+        #print(f"Control input: {u}")
+        sol = solve_ivp(self._step_func, [0, time_step], self.state, args=(u,))
+        self.state = np.array(sol.y[:, -1])
+        
+        if not sol.success:
+            print("Integration failed")
+            print(f"Sol scipy: {sol}")
 
         self.control_signals.append(self.controller.control_input(self.state, environment_data))
         self.states.append(self.state)

@@ -15,7 +15,7 @@ if __name__ == "__main__":
     def leader_state(t):
         # leader velocity is a linear interpolation of the following points
         # a point is (t, v)
-        v_points = ((0, 0), (1, 0), (1.1, 50), (5, 50), (5.1, 0))
+        v_points = ((0, 0), (1, 0), (1.5, 50), (5, 50), (5.5, 0))
         pos_initial = 0
 
         pos = pos_initial
@@ -37,7 +37,7 @@ if __name__ == "__main__":
                 pos += delta_t*prev_vel + delta_t**2 * accel / 2
                 return np.array([pos, vel, accel])
             else:
-                pos += (t_p - prev_time)*prev_vel
+                pos += (t_p - prev_time)*(prev_vel + v_p)/2
             prev_time = t_p
             prev_vel = v_p
         # if code reaches here, then time is after all points
@@ -70,10 +70,11 @@ if __name__ == "__main__":
 
     sim = Simulator(settings)
 
-    sim.simulate()
+    try:
+        sim.simulate()
+    finally:
+        data: SimData = sim.get_sim_data()
 
-    data: SimData = sim.get_sim_data()
-
-    plt.figure()
-    plot_car_positions(data, include_leader=True)
-    plt.show()
+        plt.figure()
+        plot_car_positions(data, include_leader=True)
+        plt.show()

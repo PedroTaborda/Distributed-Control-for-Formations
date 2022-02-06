@@ -18,7 +18,8 @@ class Simulator:
                 for car_params, controller_params in self.settings.cars_params
             ))
         )
-        self.simulated = False
+
+        self.sim_t = 0.0
 
     def step(self, ref: float, time_step: float) -> None:
         self.system.step(ref, time_step)
@@ -27,21 +28,19 @@ class Simulator:
         for t in np.arange(0, self.settings.time_sim, self.settings.controller_sample_time):
             t0 = time.time()
             self.step(self.settings.leader_state(t), self.settings.controller_sample_time)
-            print(f"Time step: {time.time() - t0}")
+            print(f"Time step: {time.time() - t0:.2f} ({t:.2f}/{self.settings.time_sim:.2f})")
+            self.sim_t = t 
 
-        self.simulated = True
 
     def get_sim_data(self) -> SimData:
-        if not self.simulated:
-            raise RuntimeError("Simulation not run yet")
-
         for car in self.system.cars:
             car.states = np.array(car.states)
-
+        
+        time = np.linspace(0, self.sim_t, len(self.system.cars[0].states), endpoint=False)
         return SimData(
             settings=self.settings,
             n_cars=len(self.system.cars),
-            time=np.arange(0, self.settings.time_sim+self.settings.controller_sample_time, self.settings.controller_sample_time),
+            time=time,
             positions=np.array([car.states[:, 0] for car in self.system.cars]),
             velocities=np.array([car.states[:, 1] for car in self.system.cars]),
             accelerations=np.array([car.states[:, 2] for car in self.system.cars]),

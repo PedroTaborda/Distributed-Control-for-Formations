@@ -39,7 +39,6 @@ class Car:
             params.drag_coefficient/params.mass,
             params.rolling_resistance*params.gravity
         ])
-        self.inertial_frequency = 1.0/params.inertial_delay
 
     def state_space_dynamics(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
         """Computes the derivative of the state vector, given the current state 
