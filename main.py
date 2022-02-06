@@ -65,7 +65,7 @@ if __name__ == "__main__":
                 ControllerParameters()
             )
         ),
-        leader_state=leader_state
+        leader_state= lambda t: np.array([t, 1, 0])  # leader_state
     )
 
     sim = Simulator(settings)

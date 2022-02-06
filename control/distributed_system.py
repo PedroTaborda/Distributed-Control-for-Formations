@@ -27,12 +27,14 @@ class DistributedControlledSystem:
             else:
                 car_ahead_back_state_pos = self.cars[i-1].state
 
+
             # convert to distances, as absolute position is not known
             car_ahead_back_state_dist = copy.copy(car_ahead_back_state_pos)
             car_ahead_back_state_dist[0] = car_ahead_back_state_pos[0] - (car.state[0] + car.car.params.length)
 
             cur_references.append(car_ahead_back_state_dist)
 
+            print(f"car_ahead_back_state_dist: {car_ahead_back_state_dist}")
             car.step(car_ahead_back_state_dist, time_step)
 
         self.references.append(cur_references)

@@ -28,7 +28,7 @@ class Simulator:
         for t in np.arange(0, self.settings.time_sim, self.settings.controller_sample_time):
             t0 = time.time()
             self.step(self.settings.leader_state(t), self.settings.controller_sample_time)
-            print(f"Time step: {time.time() - t0:.2f} ({t:.2f}/{self.settings.time_sim:.2f})")
+            print(f"======= Time step: {time.time() - t0:.2f} ({t:.2f}/{self.settings.time_sim:.2f})")
             self.sim_t = t 
 
 
