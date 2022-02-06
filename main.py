@@ -15,7 +15,7 @@ if __name__ == "__main__":
     def leader_state(t):
         # leader velocity is a linear interpolation of the following points
         # a point is (t, v)
-        v_points = ((0, 0), (1, 0), (6, 50), (15, 50), (21, 0))
+        v_points = ((0, 0), (1, 0), (3, 25), (5, 25), (8, 0))
         pos_initial = 0
 
         pos = pos_initial
@@ -50,7 +50,7 @@ if __name__ == "__main__":
     # example simulation with three cars
     settings = SimSettings(
         controller_sample_time=0.1,
-        time_sim=30.0,
+        time_sim=10.0,
         cars_params=(
             (
                 CarParameters(pos_i=-10.0),

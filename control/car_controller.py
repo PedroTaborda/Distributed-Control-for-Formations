@@ -9,10 +9,10 @@ from scipy.optimize import minimize
 
 from dynamics.car import Car, CarParameters
 
-def default_dist_keeping(v: float, th: float=0, d0: float=1) -> float:
+def default_dist_keeping(v: float, th: float=1.0, d0: float=1.0) -> float:
     """Computes the default distance keeping controller.
     """
-    return v
+    return v*th + d0
 
 @dataclass
 class ControllerParameters:
@@ -28,12 +28,14 @@ class ControllerParameters:
     mpc_t_horizon: float = 10.0
     mpc_n_horizon: int = 5
 
+    mpc_sim_steps_per_control_step: int = 5
+
     mpc_step_size: float = mpc_t_horizon / mpc_n_horizon
 
     mpc_u_min: float = -10000.0
     mpc_u_max: float = 10000.0
 
-    mpc_u_weight_factor: float = 1e-4
+    mpc_u_weight_factor: float = 1e-8
 
 
 class Controller:
@@ -112,28 +114,50 @@ class Controller:
 
         N = self.params.mpc_n_horizon
 
-        def derivative(x, u):
+        def derivative(t, x, u):
             derivative_state_sim = self.car.state_space_dynamics(x, u)
             return derivative_state_sim
+
+        def simulate_for_step(state: np.ndarray, u: float, t_sim: float, n_steps: int):
+            dt = t_sim / n_steps
+            for _ in range(n_steps):
+                state = state + derivative(t_sim, state, u)*dt
+                t_sim += t_step
+            return state
 
         def dynamics_constraint(PVAU, i):
             P, V, A, U = self.unpack_PVAU(PVAU)
             X = np.block([[P], [V], [A]])
 
             if i == 0:
-                dX = X[:, i] - x
+                init_X = x
             else:
-                dX = X[:, i] - X[:, i-1]
-
-            return dX - derivative(X[:, i], U[i])*self.params.mpc_step_size
-
-        def collision_constraint(PVAU, car_ahead_state, i):
+                init_X = X[:, i-1]
+            
+            return X[:, i] - simulate_for_step(init_X, U[i], self.params.mpc_step_size, self.params.mpc_sim_steps_per_control_step)
+        
+        def collision_constraint(PVAU, i):
             P, V, A, U = self.unpack_PVAU(PVAU)
 
-            return car_ahead_state[0] - P[i]  # ineq constraints are non-negative
+            return car_ahead_states[i][0] - (P[i] + self.car.params.length)  # ineq constraints are non-negative
 
-        cons = ({'type': 'eq', 'fun': lambda PVAU, i=i: dynamics_constraint(PVAU, i)} for i in range(N))
-        cons += ({'type': 'ineq', 'fun': lambda PVAU, i=i: collision_constraint(PVAU, i)} for i in range(N))
+        def collision_constraint_jac(PVAU, i):
+            zeros_vec = np.zeros_like(PVAU)
+            zeros_vec[i] = -1.0
+            return zeros_vec
+        
+        cons = list(({
+            'type': 'eq', 
+            'fun': lambda PVAU, i=i: dynamics_constraint(PVAU, i)
+            } for i in range(N)
+        ))
+        
+        cons += list(({
+            'type': 'ineq', 
+            'jac': lambda PVAU, i=i: collision_constraint_jac(PVAU, i),
+            'fun': lambda PVAU, i=i: collision_constraint(PVAU, i)
+            } for i in range(N)
+        ))
 
         def cost(PVAU): return self._mpc_cost_fcn(PVAU, car_ahead_states)
         def jac(PVAU): return self._mpc_cost_jac(PVAU, car_ahead_states)
@@ -144,9 +168,12 @@ class Controller:
         res = minimize(cost, self.U0, method="SLSQP", bounds=bnds, constraints=cons,
                        jac=jac, options={'disp': False, "maxiter": 100})
 
+
+        print('contraint: ', collision_constraint(res.x, 0))
+
         if not res.success:
+            print(f"MPC failed with error: {res.message}")
             print(res)
-            # raise Exception(f"MPC failed with error: {res.message}")
 
         self.U0 = res.x
 
