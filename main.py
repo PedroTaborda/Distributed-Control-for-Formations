@@ -27,6 +27,7 @@ if __name__ == "__main__":
         examples.ex_different_controllers.ex_avg_leader_half_acceleration_prediction_constant_distance_keeping,
         examples.ex_different_controllers.ex_avg_leader_mpc_horizon_1_sec_5_N,
         examples.ex_different_controllers.ex_avg_leader_mpc_horizon_10_sec_5_N,
+        examples.ex_different_controllers.ex_avg_leader_mpc_horizon_10_sec_10_N,
     ]
 
     processes = [

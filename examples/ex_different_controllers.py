@@ -34,6 +34,28 @@ def ex_avg_leader_mpc_horizon_10_sec_5_N(do_plots: bool = True, figs_dir: str = 
 
     plt.show(block=False)
 
+def ex_avg_leader_mpc_horizon_10_sec_10_N(do_plots: bool = True, figs_dir: str = '') -> None:
+    settings = SimSettings(
+        leader_state=avg_speed_leader,
+        cars_params=tuple(
+        (
+            CarParameters(pos_i=pos),
+            ControllerParameters(
+                mpc_t_horizon=10.0,
+                mpc_n_horizon=10,
+            )
+        ) for pos in [-13.5, -27.0, -40.5, -54.0]
+        )
+    )
+    sim_data = Simulator(settings).sim_and_get_data()
+    
+    if not do_plots: return
+
+    plot_car_positions(sim_data, include_leader=True)
+    plt.savefig(os.path.join(figs_dir, 'ex_avg_leader_mpc_horizon_10_sec_10_N.pdf'))
+
+    plt.show(block=False)
+
 def ex_avg_leader_mpc_horizon_1_sec_5_N(do_plots: bool = True, figs_dir: str = '') -> None:
     settings = SimSettings(
         leader_state=avg_speed_leader,

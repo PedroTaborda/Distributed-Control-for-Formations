@@ -17,7 +17,7 @@ class CarParameters:
     mass: float = 810       # mass in kg
 
     gravity: float = 9.81  # gravity in m/s^2
-    rolling_resistance: float = 0.01  # rolling resistance in TODO: units (seems like meter)
+    rolling_resistance: float = 0.01  # rolling resistance, dimensionless
 
     deadzone_threshold_velocity: float = 0.1  # velocity in m/s
 
