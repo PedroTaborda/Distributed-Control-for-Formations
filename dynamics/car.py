@@ -19,12 +19,21 @@ class CarParameters:
     gravity: float = 9.81  # gravity in m/s^2
     rolling_resistance: float = 0.01  # rolling resistance in TODO: units (seems like meter)
 
+    deadzone_threshold_velocity: float = 0.1  # velocity in m/s
+
     inertial_delay: float = 0.5  # delay in seconds
 
     pos_i: float = 0.0  # initial position in meters
     vel_i: float = 0.0  # initial velocity in meters/second
     accel_i: float = 0.0  # initial acceleration in meters/second^2
 
+def deadzone(param: float, threshold: float, continuous: bool = True):
+    """ Implements a deadzone on a given input.
+    """
+    if abs(param) < threshold:
+        return 0
+    else:
+        return param - threshold * np.sign(param) if continuous else param
 
 class Car:
     """Models dynamics of a single car (time invariant)
@@ -58,6 +67,6 @@ class Car:
 
         derivative_vel = a
 
-        derivative_accel = np.dot(self.adot_coefs, [u, a, v**2, a*v, 1])
+        derivative_accel = np.dot(self.adot_coefs, [u, a, v**2, a*v, 1*np.sign(deadzone(v, self.params.deadzone_threshold_velocity))])
 
         return np.array([derivative_pos, derivative_vel, derivative_accel])

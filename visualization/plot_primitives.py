@@ -13,6 +13,7 @@ def plot_car_positions(data: SimData, include_leader=False) -> None:
     plt.xlabel("time (s)")
     plt.ylabel("position (m)")
     plt.legend()
+
     
 def plot_car_reference_error(data: SimData) -> None:
     for i in range(data.n_cars):
