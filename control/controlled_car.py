@@ -17,13 +17,11 @@ class ControlledCar:
         self.controller = Controller(controller_params)
 
         # define initial state
-        self.sim_state = np.array([
+        self.state = np.array([
             self.car.params.pos_i,
             self.car.params.vel_i,
-            self.car.params.T_i
+            self.car.params.accel_i
         ])
-
-        self.state = self.car.state_pva(self.sim_state)
 
         self.control_signals = []
         self.states = [self.state]
@@ -35,10 +33,8 @@ class ControlledCar:
         u = self.controller.control_input(self.state, environment_data)
         #print(f"environment_data: {environment_data}")
         print(f"Control input: {u}")
-        sol = solve_ivp(self._step_func, [0, time_step], self.sim_state, args=(u,))
-        self.sim_state = np.array(sol.y[:, -1])
-
-        self.state = self.car.state_pva(self.sim_state)
+        sol = solve_ivp(self._step_func, [0, time_step], self.state, args=(u,))
+        self.state = np.array(sol.y[:, -1])
 
         if not sol.success:
             print("Integration failed")

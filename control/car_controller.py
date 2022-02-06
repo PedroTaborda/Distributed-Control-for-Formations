@@ -39,7 +39,7 @@ class Controller:
 
         self.U0 = np.ones(self.params.mpc_n_horizon*4)
 
-    def _error_to_ref(self, PVAU: np.ndarray, car_ahead_states: np.ndarray, disp: bool=False) -> np.ndarray:
+    def _error_to_ref(self, PVAU: np.ndarray, car_ahead_states: np.ndarray, disp: bool = False) -> np.ndarray:
         P, V, A, U = self.unpack_PVAU(PVAU)
         distances_to_front = car_ahead_states[:, 0] - (P + self.car.params.length)
         reference_distances = np.array([self.params.d(state[1]) for state in car_ahead_states])
@@ -108,12 +108,12 @@ class Controller:
 
         N = self.params.mpc_n_horizon
 
-        def derivative(x, u): 
+        def derivative(x, u):
             derivative_state_sim = self.car.state_space_dynamics(x, u)
             return derivative_state_sim
 
-        def dynamics_constraint(PVTU, i):
-            P, V, A, U = self.unpack_PVAU(PVTU)
+        def dynamics_constraint(PVAU, i):
+            P, V, A, U = self.unpack_PVAU(PVAU)
             X = np.block([[P], [V], [A]])
 
             if i == 0:

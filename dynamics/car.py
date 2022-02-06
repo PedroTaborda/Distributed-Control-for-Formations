@@ -23,7 +23,7 @@ class CarParameters:
 
     pos_i: float = 0.0  # initial position in meters
     vel_i: float = 0.0  # initial velocity in meters/second
-    T_i: float = 0.0  # initial acceleration in meters/second^2
+    accel_i: float = 0.0  # initial acceleration in meters/second^2
 
 
 class Car:
@@ -33,26 +33,31 @@ class Car:
     def __init__(self, params: CarParameters) -> None:
         self.params: CarParameters = params
 
-        # pre compute some coefficients so as not to clutter the state space
-        self.vdot_coefs = np.array([
-            params.powertrain_efficiency/(params.mass*params.wheel_radius),
-            params.drag_coefficient/params.mass,
-            params.rolling_resistance*params.gravity
+        # pre compute some coefficients
+        # they multiply with u, a, v*v, a*v and 1
+        self.adot_coefs = np.array([
+            params.powertrain_efficiency/(params.mass*params.wheel_radius*params.inertial_delay),
+            -1/params.inertial_delay,
+            -params.drag_coefficient/(params.mass*params.inertial_delay),
+            -2*params.drag_coefficient/params.mass,
+            -params.rolling_resistance*params.gravity/params.inertial_delay
         ])
 
-    def state_pva(self, x: np.ndarray) -> np.ndarray:
-        """Computes the position, velocity and acceleration of the car.
-        """
-        return np.array([x[0], x[1], np.dot(self.vdot_coefs, [x[2], x[1], 1])])
+    # def state_pva(self, x: np.ndarray) -> np.ndarray:
+    #     """Computes the position, velocity and acceleration of the car.
+    #     """
+    #     return np.array([x[0], x[1], np.dot(self.adot_coefs, [x[2], x[1], 1])])
 
-    def state_space_dynamics(self, x: np.ndarray, u: np.ndarray) -> np.ndarray:
-        """Computes the derivative of the state vector, given the current state 
+    def state_space_dynamics(self, x: np.ndarray, u: float) -> np.ndarray:
+        """Computes the derivative of the state vector, given the current state
         and the control input.
         """
-        derivative_pos = x[1]
+        v = x[1]
+        a = x[2]
+        derivative_pos = v
 
-        derivative_vel = np.dot(self.vdot_coefs, [x[2], x[1], 1])
+        derivative_vel = a
 
-        derivative_T = -(1.0/self.params.inertial_delay)*(x[2] - u)
+        derivative_accel = np.dot(self.adot_coefs, [u, a, v**2, a*v, 1])
 
-        return np.array([derivative_pos, derivative_vel, derivative_T])
+        return np.array([derivative_pos, derivative_vel, derivative_accel])
